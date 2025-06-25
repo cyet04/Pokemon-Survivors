@@ -17,6 +17,7 @@ MonoBehaviour:
   moveSpeed: 2.5
   damage: 4
   attackRange: 0
-  attackType: 3
+  exp: 3
+  attackType: 0
   projectileData: {fileID: 0}
-  explodeEffect: {fileID: 4593184484909914552, guid: 7c6909f69e6804242898965ec5c0cab9, type: 3}
+  explodeEffect: {fileID: 0}

@@ -10,6 +10,9 @@ public class PlayerController : MonoBehaviour, IDamageable
     public PlayerData playerData;
     private float curentHP;
     private float moveSpeed;
+    [Header("------Player level------")]
+    private int currentLevel = 1;
+    private float currentExp = 0f;
 
     private Animator animator;
     private Rigidbody2D rb;
@@ -31,10 +34,13 @@ public class PlayerController : MonoBehaviour, IDamageable
         // Setup for input actions
         playerInputAction = new PlayerInputAction();
         playerInputAction.Player.Enable();
+        // Move
         playerInputAction.Player.Move.performed += ctx => moveInput = ctx.ReadValue<Vector2>();
         playerInputAction.Player.Move.canceled += ctx => moveInput = Vector2.zero;
-
+        // Dash
         playerInputAction.Player.Dash.performed += ctx => TryDash();
+        // Pause
+        playerInputAction.Player.Pause.performed += ctx => Observer.Instance.Broadcast(EventId.OnPauseGame);
 
         if (playerData != null)
         {
@@ -43,8 +49,21 @@ public class PlayerController : MonoBehaviour, IDamageable
         }
         else
         {
-            Debug.LogError("Player data is not assigned in the inspector.");
+            Debug.LogError("Player data is not assigned");
         }
+    }
+
+    private void Start()
+    {
+        // Load cac thong so player
+        HealthUI.Instance.UpdateHealth(curentHP);
+        ExpUI.Instance.UpdateExp(new PlayerExpData(currentExp, playerData.playerLevel.GetExpForLevel(currentLevel)));
+        Observer.Instance.Register(EventId.OnEnemyDied, GainExpFromEnemy);
+    }
+
+    private void OnDisable()
+    {
+        Observer.Instance.UnRegister(EventId.OnEnemyDied, GainExpFromEnemy);
     }
 
     private void Update()
@@ -75,10 +94,13 @@ public class PlayerController : MonoBehaviour, IDamageable
     public void TakeDamage(float damage)
     {
         curentHP -= damage;
+        Observer.Instance.Broadcast(EventId.OnHealthChanged, curentHP);
+        DamageNumberManager.Instance.SpawnDamageNumber(damage, transform.position);
         if (curentHP <= 0)
         {
             // Handle player death
-            Debug.Log("Player is dead");
+            gameObject.SetActive(false);
+            Observer.Instance.Broadcast(EventId.OnPlayerDied);
         }
     }
 
@@ -101,21 +123,49 @@ public class PlayerController : MonoBehaviour, IDamageable
 
         Vector3 mouseWorldPos = Camera.main.ScreenToWorldPoint(mouseScreenPos);
         Vector2 direction = (mouseWorldPos - firePoint.position).normalized;
-        GameObject weapon = MyPoolManager.Instance.GetFromPool(weaponPrefab, null);
-        weapon.transform.position = firePoint.position;
-        weapon.transform.rotation = Quaternion.LookRotation(Vector3.forward, direction);
 
-        WeaponController weaponController = weapon.GetComponent<WeaponController>();
-        weaponController.weaponData = weaponData;
+        int totalShots = 1 + PlayerWeaponModifier.Instance.extraWeapon;
+        float angleStep = 10f; // goc gia cac phat ban
+        float baseAngle = -angleStep * (totalShots - 1) / 2f; // goc ban dau
 
-        Rigidbody2D rb = weapon.GetComponent<Rigidbody2D>();
-        rb.velocity = direction * weaponData.speed;
-        Debug.DrawLine(firePoint.position, firePoint.position + (Vector3)direction * 5f, Color.green, 1f);
+        for (int i = 0; i < totalShots; i++)
+        {
+            float angle = baseAngle + i * angleStep;
+            Vector2 dir = Quaternion.Euler(0, 0, angle) * direction;
+            
+            GameObject weapon = MyPoolManager.Instance.GetFromPool(weaponPrefab, this.transform);
+            weapon.transform.position = firePoint.position;
+            weapon.transform.rotation = Quaternion.LookRotation(Vector3.forward, dir);
+
+            Rigidbody2D rb = weapon.GetComponent<Rigidbody2D>();
+            rb.velocity = dir * weaponData.speed;
+            Debug.DrawLine(firePoint.position, firePoint.position + (Vector3)dir * 5f, Color.green, 1f);
+        }
     }
 
     private void TryDash()
     {
         dashEffect.StartDash(moveInput);
     }
-}
 
+    public void GainExp(float exp)
+    {
+        currentExp += exp;
+        float expToLevelUp = playerData.playerLevel.GetExpForLevel(currentLevel);
+        while (currentExp >= expToLevelUp && currentLevel < playerData.playerLevel.maxLevel)
+        {
+            currentExp -= expToLevelUp;
+            currentLevel++;
+            expToLevelUp = playerData.playerLevel.GetExpForLevel(currentLevel);
+            Observer.Instance.Broadcast(EventId.OnLevelUp);
+        }
+
+        Observer.Instance.Broadcast(EventId.OnExpChanged, new PlayerExpData(currentExp, playerData.playerLevel.GetExpForLevel(currentLevel)));    
+    }
+
+    public void GainExpFromEnemy(object obj)
+    {
+        float exp = (float)obj;
+        GainExp(exp);
+    }
+}

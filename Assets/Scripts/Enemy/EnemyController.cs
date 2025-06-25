@@ -1,17 +1,19 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using DG.Tweening;
 
 public class EnemyController : MonoBehaviour, IDamageable
 {
     public EnemyData enemyData;
-
     public float currentHP;
     public float moveSpeed;
     public float damage;
     public float attackRange;
+    public float exp;
 
     public SpriteRenderer spriteRenderer;
+    public Color originalColor;
     public Rigidbody2D rb;
     public PlayerController player;
     private Vector2 direction;
@@ -25,6 +27,7 @@ public class EnemyController : MonoBehaviour, IDamageable
     private void Start()
     {
         spriteRenderer = GetComponent<SpriteRenderer>();
+        originalColor = spriteRenderer.color;
         player = FindObjectOfType<PlayerController>();
         rb = GetComponent<Rigidbody2D>();
 
@@ -34,6 +37,7 @@ public class EnemyController : MonoBehaviour, IDamageable
             moveSpeed = enemyData.moveSpeed;
             damage = enemyData.damage;
             attackRange = enemyData.attackRange;
+            exp = enemyData.exp;
         }
         else
         {
@@ -105,15 +109,32 @@ public class EnemyController : MonoBehaviour, IDamageable
     public void TakeDamage(float damage)
     {
         currentHP -= damage;
+
+        // Hieu ung khi dinh damage
+        spriteRenderer.DOColor(Color.red, 0.1f).OnComplete(() =>
+            spriteRenderer.DOColor(originalColor, 0.05f));
+
+        // Them hieu ung day lui
+        transform.DOMove((Vector2)transform.position + (-direction) * 0.3f, 0.2f)
+            .SetEase(Ease.OutQuad)
+            .OnComplete(() => {
+                // Neu con song thi tiep tuc di chuyen
+                if (currentHP > 0)
+                {
+                    rb.velocity = direction * moveSpeed;
+                }
+            });
+
+        DamageNumberManager.Instance.SpawnDamageNumber(damage, transform.position);
         if (currentHP <= 0)
         {
+            Observer.Instance.Broadcast(EventId.OnEnemyDied, exp);
             // Handle enemy death
             if (enemyData.attackType == EnemyAttackType.Explode)
             {
                 rb.velocity = Vector2.zero;
                 attackBehavior?.Attack(player, this);
             }
-
             else
             {
                 gameObject.SetActive(false);

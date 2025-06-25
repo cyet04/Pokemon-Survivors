@@ -8,5 +8,6 @@ public class PlayerData : ScriptableObject
     public string playerName;
     public float maxHP;
     public float moveSpeed;
+    public PlayerLevelData playerLevel;
     //public List<Skill>
 }

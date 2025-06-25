@@ -11,12 +11,13 @@ public class EnemyData : ScriptableObject
     public float moveSpeed;
     public float damage;
     public float attackRange;
+    public float exp;
     public EnemyAttackType attackType;
 
     [Header("------Ranged Attack------")]
     public ProjectileData projectileData;
 
-    [Header("------Ranged Attack------")]
+    [Header("------Exploded------")]
     public GameObject explodeEffect;
 }
 
