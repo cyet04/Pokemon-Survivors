@@ -19,5 +19,6 @@ public class PlayerWeaponModifier : MonoBehaviour
     }
 
     public int extraWeapon = 0;
-    public float attackSpeedMutiplier = 1f;
+    public float attackSpeed = 0f;
+    public float damage = 0f;
 }

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 using UnityEngine.UIElements;
@@ -8,8 +9,9 @@ using UnityEngine.UIElements;
 public class PlayerController : MonoBehaviour, IDamageable
 {
     public PlayerData playerData;
-    private float curentHP;
-    private float moveSpeed;
+    public float currentHP;
+    public float maxHP;
+    public float moveSpeed;
     [Header("------Player level------")]
     private int currentLevel = 1;
     private float currentExp = 0f;
@@ -44,7 +46,8 @@ public class PlayerController : MonoBehaviour, IDamageable
 
         if (playerData != null)
         {
-            curentHP = playerData.maxHP;
+            currentHP = playerData.maxHP;
+            maxHP = playerData.maxHP;
             moveSpeed = playerData.moveSpeed;
         }
         else
@@ -56,7 +59,7 @@ public class PlayerController : MonoBehaviour, IDamageable
     private void Start()
     {
         // Load cac thong so player
-        HealthUI.Instance.UpdateHealth(curentHP);
+        HealthUI.Instance.UpdateHealth(currentHP);
         ExpUI.Instance.UpdateExp(new PlayerExpData(currentExp, playerData.playerLevel.GetExpForLevel(currentLevel)));
         Observer.Instance.Register(EventId.OnEnemyDied, GainExpFromEnemy);
     }
@@ -93,10 +96,10 @@ public class PlayerController : MonoBehaviour, IDamageable
 
     public void TakeDamage(float damage)
     {
-        curentHP -= damage;
-        Observer.Instance.Broadcast(EventId.OnHealthChanged, curentHP);
-        DamageNumberManager.Instance.SpawnDamageNumber(damage, transform.position);
-        if (curentHP <= 0)
+        currentHP -= damage;
+        Observer.Instance.Broadcast(EventId.OnHealthChanged, currentHP);
+        DamageNumberManager.Instance.SpawnDamageNumber(damage, transform.position, new Color(1, 0.6f, 0, 1));
+        if (currentHP <= 0)
         {
             // Handle player death
             gameObject.SetActive(false);
@@ -109,7 +112,7 @@ public class PlayerController : MonoBehaviour, IDamageable
         fireCoolDown -= Time.deltaTime;
         if (fireCoolDown < 0)
         {
-            fireCoolDown = 1f / weaponData.fireRate;
+            fireCoolDown = 1f / weaponData.fireRate - PlayerWeaponModifier.Instance.attackSpeed;
             FireWeapon();
         }
     }

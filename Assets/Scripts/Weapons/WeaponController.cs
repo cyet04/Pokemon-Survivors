@@ -41,7 +41,7 @@ public class WeaponController : MonoBehaviour
         {
             StopCoroutine(lifeCoroutine);
         }
-    } 
+    }
 
     private IEnumerator DisableAfterLifeTime(float time)
     {
@@ -51,10 +51,25 @@ public class WeaponController : MonoBehaviour
 
     private void OnCollisionEnter2D(Collision2D collision)
     {
+        var enemy = collision.gameObject.GetComponent<EnemyController>();
+        if (enemy != null && PlayerSkillManager.Instance.learnedSkill != null)
+        {
+            foreach (var pair in PlayerSkillManager.Instance.learnedSkill)
+            {
+                if (pair.Key.skillType == SkillType.Freeze)
+                {
+                    int level = pair.Value;
+                    float freezeTime = pair.Key.levelStats[level - 1].value;
+                    enemy.Freeze(freezeTime);
+                    break;
+                }
+            }
+        }
+
         var obj = collision.gameObject.GetComponent<IDamageable>();
         if (obj != null)
         {
-            obj.TakeDamage(damage);
+            obj.TakeDamage(damage + PlayerWeaponModifier.Instance.damage);
         }
         gameObject.SetActive(false);
     }

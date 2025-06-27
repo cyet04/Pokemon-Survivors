@@ -124,7 +124,7 @@ PolygonCollider2D:
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0.5, y: 0}
-    oldSize: {x: 0.5, y: 0.75}
+    oldSize: {x: 0.64, y: 0.96}
     newSize: {x: 0.5, y: 0.75}
     adaptiveTilingThreshold: 0.5
     drawMode: 0
@@ -155,6 +155,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   weaponData: {fileID: 11400000, guid: 8d6eb8d750828fa4bae66dbd0108fc47, type: 2}
+  Freeze: {fileID: 11400000, guid: dee005ecff3ae23499f8d5a508af0337, type: 2}
 --- !u!114 &2939408713879548383
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -167,7 +168,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d33f047db3db8d84ab1816cd92040793, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  pool: {fileID: 0}
 --- !u!50 &8250023061378213035
 Rigidbody2D:
   serializedVersion: 4

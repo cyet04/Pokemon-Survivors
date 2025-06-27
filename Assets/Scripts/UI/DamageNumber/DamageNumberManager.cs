@@ -6,8 +6,8 @@ public class DamageNumberManager : MonoBehaviour
 {
     public static DamageNumberManager Instance { get; private set; }
 
-    [SerializeField] private GameObject damageNumberPrefab;
-    [SerializeField] private Transform damageNumberParent;
+    [SerializeField] private GameObject numberPrefab;
+    [SerializeField] private Transform numberParent;
 
     private void Awake()
     {
@@ -21,15 +21,15 @@ public class DamageNumberManager : MonoBehaviour
         }
     }
 
-    public void SpawnDamageNumber(float damage, Vector3 position)
+    public void SpawnDamageNumber(float amount, Vector3 position, Color color)
     {
-        GameObject damageNumber = MyPoolManager.Instance.GetFromPool(damageNumberPrefab, damageNumberParent);
-        if (damageNumber != null)
+        GameObject number = MyPoolManager.Instance.GetFromPool(numberPrefab, numberParent);
+        if (number != null)
         {
-            damageNumber.transform.position = position;
-            damageNumber.gameObject.SetActive(true);
-            DamageNumber dmgNumberComponent = damageNumber.GetComponent<DamageNumber>();
-            dmgNumberComponent.Initialize(damage);
+            number.transform.position = position;
+            number.gameObject.SetActive(true);
+            DamageNumber dmgNumberComponent = number.GetComponent<DamageNumber>();
+            dmgNumberComponent.Initialize(amount, color);
         }
     }
 }

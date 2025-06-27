@@ -40,8 +40,8 @@ public class HealthUI : MonoBehaviour
 
     public void UpdateHealth(object obj)
     {
-        healthSlider.maxValue = player.playerData.maxHP;
+        healthSlider.maxValue = player.maxHP;
         healthSlider.value = (float)obj;
-        healthText.text = $"{(float)obj} / {player.playerData.maxHP}";
+        healthText.text = $"{(float)obj} / {player.maxHP}";
     }
 }

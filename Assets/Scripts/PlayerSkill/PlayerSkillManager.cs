@@ -6,6 +6,7 @@ using UnityEngine;
 public class PlayerSkillManager : MonoBehaviour
 {
     public static PlayerSkillManager Instance { get; private set; }
+    public  PlayerController player;
 
     private void Awake()
     {
@@ -17,6 +18,7 @@ public class PlayerSkillManager : MonoBehaviour
         {
             Destroy(gameObject);
         }
+        player = FindObjectOfType<PlayerController>();
     }
 
     public Dictionary<SkillData, int> learnedSkill = new();
@@ -54,25 +56,24 @@ public class PlayerSkillManager : MonoBehaviour
                 PlayerWeaponModifier.Instance.extraWeapon += (int)value;
                 break;
             case SkillType.AttackSpeed:
-                //
+                PlayerWeaponModifier.Instance.attackSpeed += value;
                 break;
             case SkillType.Damage:
-                //
-                break;
-            case SkillType.Freeze:
-                //
+                PlayerWeaponModifier.Instance.damage += value;
                 break;
             case SkillType.Heal:
                 //
                 break;
             case SkillType.Hp:
-                //
+                player.currentHP += value;
+                player.maxHP += value;
+                Observer.Instance.Broadcast(EventId.OnHealthChanged, player.currentHP);
                 break;
             case SkillType.Regen:
                 //
                 break;
             case SkillType.Speed:
-                //
+                player.moveSpeed *= value;
                 break;
             case SkillType.Summon:
                 //

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using DG.Tweening;
+using Unity.VisualScripting;
 
 public class EnemyController : MonoBehaviour, IDamageable
 {
@@ -24,7 +25,10 @@ public class EnemyController : MonoBehaviour, IDamageable
 
     private IEnemyAttackBehaviors attackBehavior;
 
-    private void Start()
+    private bool isFrozen = false;
+    private Coroutine freezeRoutine;
+
+    private void OnEnable()
     {
         spriteRenderer = GetComponent<SpriteRenderer>();
         originalColor = spriteRenderer.color;
@@ -80,22 +84,25 @@ public class EnemyController : MonoBehaviour, IDamageable
 
     private void FixedUpdate()
     {
-        // Thay đổi tùy loại enemy
-        if (enemyData.attackType == EnemyAttackType.Melee || enemyData.attackType == EnemyAttackType.Explode)
+        if (!isFrozen)
         {
-            rb.velocity = direction * moveSpeed;
-        }
-        else if (enemyData.attackType == EnemyAttackType.Ranged)
-        {
-            float distance = Vector2.Distance(transform.position, player.transform.position);
-            if (distance > attackRange - 0.5f)
+            // Thay đổi tùy loại enemy
+            if (enemyData.attackType == EnemyAttackType.Melee || enemyData.attackType == EnemyAttackType.Explode)
             {
                 rb.velocity = direction * moveSpeed;
             }
-            else
+            else if (enemyData.attackType == EnemyAttackType.Ranged)
             {
-                rb.velocity = Vector2.zero;
-                attackBehavior?.Attack(player, this);
+                float distance = Vector2.Distance(transform.position, player.transform.position);
+                if (distance > attackRange - 0.5f)
+                {
+                    rb.velocity = direction * moveSpeed;
+                }
+                else
+                {
+                    rb.velocity = Vector2.zero;
+                    attackBehavior?.Attack(player, this);
+                }
             }
         }
     }
@@ -117,18 +124,40 @@ public class EnemyController : MonoBehaviour, IDamageable
         // Them hieu ung day lui
         transform.DOMove((Vector2)transform.position + (-direction) * 0.3f, 0.2f)
             .SetEase(Ease.OutQuad)
-            .OnComplete(() => {
+            .OnComplete(() =>
+            {
                 // Neu con song thi tiep tuc di chuyen
-                if (currentHP > 0)
+                if (currentHP > 0 && !isFrozen)
                 {
                     rb.velocity = direction * moveSpeed;
                 }
             });
 
-        DamageNumberManager.Instance.SpawnDamageNumber(damage, transform.position);
+        DamageNumberManager.Instance.SpawnDamageNumber(damage, transform.position, new Color(1, 0.6f, 0, 1));
         if (currentHP <= 0)
         {
             Observer.Instance.Broadcast(EventId.OnEnemyDied, exp);
+
+            if (PlayerSkillManager.Instance.learnedSkill != null)
+            {
+                foreach (var pair in PlayerSkillManager.Instance.learnedSkill)
+                {
+                    if (pair.Key.skillType == SkillType.Heal)
+                    {
+                        int level = pair.Value;
+                        int hp = (int)pair.Key.levelStats[level - 1].value;
+                        if (player.currentHP < player.maxHP)
+                        {
+                            hp = Mathf.Min(hp, (int)(player.maxHP - player.currentHP));
+                        }
+                        player.currentHP += hp;
+                        DamageNumberManager.Instance.SpawnDamageNumber(hp, player.transform.position, Color.green);
+                        Observer.Instance.Broadcast(EventId.OnHealthChanged, player.currentHP);
+                        break;
+                    }
+                }
+            }
+
             // Handle enemy death
             if (enemyData.attackType == EnemyAttackType.Explode)
             {
@@ -156,5 +185,29 @@ public class EnemyController : MonoBehaviour, IDamageable
     {
         Gizmos.color = Color.red;
         Gizmos.DrawWireSphere(transform.position, attackRange);
+    }
+
+    public void Freeze(float duration)
+    {
+        if (isFrozen)
+        {
+            if (freezeRoutine != null)
+            {
+                StopCoroutine(freezeRoutine);
+            }
+        }
+        freezeRoutine = StartCoroutine(FreezeCoroutine(duration));
+    }
+    IEnumerator FreezeCoroutine(float duration)
+    {
+        isFrozen = true;
+        spriteRenderer.DOColor(Color.cyan, 0.2f);
+        rb.velocity = Vector2.zero;
+
+        yield return new WaitForSeconds(duration);
+
+        spriteRenderer.DOColor(originalColor, 0.2f);
+        isFrozen = false;
+        freezeRoutine = null;
     }
 }
