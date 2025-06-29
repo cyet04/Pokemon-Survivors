@@ -1,3 +1,5 @@
+﻿using DG.Tweening;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -29,8 +31,10 @@ public class SkillSelectUI : MonoBehaviour
         for (int i = 0; i < skillCards.Length; i++)
         {
             skillCards[i].SetUp(chosen[i]);
+            skillCards[i].ItemAnimation(i * 0.3f);
         }
     }
+
 
     private List<SkillData> GetRandomSkills(List<SkillData> list, int count)
     {

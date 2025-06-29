@@ -54,4 +54,5 @@ public enum EventId
     OnPlayerDied,
     OnEnemyDied,
     OnPauseGame,
+    OnCoinCollected,
 }
